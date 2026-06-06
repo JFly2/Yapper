@@ -1,0 +1,54 @@
+body {
+    background-color: rgb(0 128 0 / 0.56);
+}
+
+.login-container {
+    background-color: rgb(238 238 238 / 0.44);
+    width: 100%;
+    max-width: 400px;
+    margin: 20px auto;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    padding: 30px;
+    border-radius: 15px;
+}
+
+.register-link{
+    color: grey;
+    text-decoration: none;
+}
+
+.register-link:hover{
+    text-decoration: underline;
+}
+
+.login-input {
+    padding: 12px 15px;
+    border-radius: 10px;
+    border: none;
+    font-size: 15px;
+    background-color: lightgrey;
+    color: white;
+
+}
+
+.login-button {
+    background-color: gold;
+    color: black;
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+}
+
+.login-button:hover{
+    opacity: 0.8;
+}
+
+.error-message {
+    color:red;
+    min-height: 24px;
+}
