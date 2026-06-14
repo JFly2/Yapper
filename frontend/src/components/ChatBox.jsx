@@ -7,7 +7,7 @@ import { MessageInput } from "./MessageInput.jsx";
 import { RoomSidebar } from "./RoomSidebar.jsx";
 import { MessageList } from "./MessageList.jsx";
 
-export function ChatBox() {
+function ChatBox() {
 
     const [stompClient, setStompClient] = useState(null);
 
@@ -23,6 +23,7 @@ export function ChatBox() {
     const [isConnected, setIsConnected] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
+    const currentUsername = localStorage.getItem("username");
 
 
     useEffect(() => {
@@ -143,10 +144,6 @@ export function ChatBox() {
 
         setRoomId(newRoomId);
 
-        console.log(
-            `Joined room ${newRoomId}`
-        );
-
         setJoinedRooms((prevRooms) => {
             if (prevRooms.includes(newRoomId)) {
                 return prevRooms;
@@ -212,12 +209,13 @@ export function ChatBox() {
                     >
                         ☰
                     </button>
-                    
+
                     {roomId && (
-                        <span>
+                        <span className={"room-id"}>
                             Room: {roomId}
                         </span>
                     )}
+
                 </div>
 
                 {!roomId ? (
@@ -235,7 +233,7 @@ export function ChatBox() {
                     </div>
                 ) : (
                     <>
-                        <MessageList messageList={messages} />
+                        <MessageList messageList={messages} currentUsername={currentUsername} />
                         <MessageInput sendMessage={sendMessage} />
                     </>
                 )}
@@ -243,3 +241,5 @@ export function ChatBox() {
         </div>
     );
 }
+
+export default ChatBox

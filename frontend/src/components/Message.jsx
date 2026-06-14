@@ -1,23 +1,39 @@
+import "../styles/Message.css";
 
-export function Message ({sender,content,timestamp}){
-
-    const formattedTime = timestamp ? new Date (timestamp).toTimeString([],
-        {
+export function Message({
+                            sender,
+                            content,
+                            timestamp,
+                            isOwnMessage
+                        }) {
+    const formattedTime = timestamp
+        ? new Date(timestamp).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit"
         })
         : "";
 
-
     return (
-        <div>
-            <strong>
-                {sender}
-            </strong>
+        <div
+            className={`message-row ${
+                isOwnMessage ? "own-message" : "other-message"
+            }`}
+        >
+            <div className="message-bubble">
+                <div className="message-header">
+                    <span className="message-sender">
+                        {sender || "Unknown User"}
+                    </span>
 
-            <p>
-                {content}
-            </p>
+                    <span className="message-time">
+                        {formattedTime}
+                    </span>
+                </div>
+
+                <p className="message-content">
+                    {content}
+                </p>
+            </div>
         </div>
     );
 }

@@ -32,6 +32,7 @@ export function LoginPage(){
            const token = response.data;
 
            localStorage.setItem("jwt_token", token);
+           localStorage.setItem("username", username);
 
            navigate("/chat");
 

@@ -1,4 +1,4 @@
-import {ChatBox} from "../components/ChatBox.jsx";
+import ChatBox from "../components/ChatBox.jsx";
 import "../styles/ChatPage.css";
 export function ChatPage(){
 

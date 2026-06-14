@@ -21,7 +21,7 @@ public class MessageService {
      }
 
      public List<Message> getMessagesByRoomId(Long roomId){
-        return messageRepository.findByRoomId(roomId);
+        return messageRepository.findByRoomIdOrderByTimestampAsc(roomId);
      }
 
 }

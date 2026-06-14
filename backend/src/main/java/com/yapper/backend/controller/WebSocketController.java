@@ -20,7 +20,10 @@ public class WebSocketController {
     }
 
     @MessageMapping("/yapper.send")
-    public void sendMessage(Message message){
+    public void sendMessage(Message message, Principal principal){
+
+
+        message.setSender(principal.getName());
 
         Message savedMessage = messageService.saveMessage(message);
 
