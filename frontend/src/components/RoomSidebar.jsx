@@ -1,21 +1,22 @@
 import "../styles/RoomSideBar.css";
 import { useNavigate } from "react-router-dom";
 
-export function RoomSidebar({roomInput, setRoomInput, joinRoom, joinedRooms, activeRoomId, isConnected}) {
+export function RoomSidebar({roomInput, setRoomInput, joinRoom, joinRoomByCode, joinedRooms, activeRoomId, isConnected}) {
 
     const navigate = useNavigate();
 
-    function handleJoinRoom(event) {
+    async function handleJoinRoom(event) {
         event.preventDefault();
 
-        if (roomInput.trim() !== "") {
-            joinRoom(roomInput.trim());
+        if (roomInput.trim()) {
+            await joinRoomByCode(roomInput);
             setRoomInput("");
         }
     }
 
     function handleLogOut(){
-        localStorage.removeItem("jwt-token");
+        localStorage.removeItem("jwt_token");
+        localStorage.removeItem("username");
         navigate("/login")
     }
 
@@ -36,6 +37,8 @@ export function RoomSidebar({roomInput, setRoomInput, joinRoom, joinedRooms, act
                 type="text"
 
                 value={roomInput}
+
+                placeholder={"Enter join code"}
 
                 onChange={(event) =>
 
@@ -70,15 +73,16 @@ export function RoomSidebar({roomInput, setRoomInput, joinRoom, joinedRooms, act
 
                 {joinedRooms.map((room) => (
                     <button
-                        key={room}
+                        key={room.id}
+                        type={"button"}
                         className={
-                            room === activeRoomId
+                            String(room.id) === activeRoomId
                                 ? "room-item active-room"
                                 : "room-item"
                         }
-                    onClick={() => joinRoom(room)}
+                    onClick={() => joinRoom(String(room.id))}
                 >
-                        Room {room}
+                        {room.name}
                     </button>
                         ))}
             </div>

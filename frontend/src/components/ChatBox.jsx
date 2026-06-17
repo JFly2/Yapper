@@ -25,6 +25,10 @@ function ChatBox() {
 
     const currentUsername = localStorage.getItem("username");
 
+    const activeRoom = joinedRooms.find (
+        (room) => String(room.id) === roomId
+    );
+
 
     useEffect(() => {
 
@@ -144,12 +148,6 @@ function ChatBox() {
 
         setRoomId(newRoomId);
 
-        setJoinedRooms((prevRooms) => {
-            if (prevRooms.includes(newRoomId)) {
-                return prevRooms;
-            }
-           return [...prevRooms, newRoomId];
-        });
     }
 
     function sendMessage(content) {
@@ -182,6 +180,37 @@ function ChatBox() {
         );
     }
 
+    async function joinRoomByCode(code){
+        const joinCode = code.trim().toUpperCase();
+
+        if (!joinCode){
+            return;
+        }
+
+        try {
+            const response = await api.get(
+                `/rooms/code/${joinCode}`
+            );
+
+            const room = response.data;
+
+            await joinRoom(String(room.id));
+
+            setJoinedRooms((previousRooms) => {
+                const prevJoined = previousRooms.some(
+                    (joinedRooms) => joinedRooms.id === room.id
+                );
+
+                return prevJoined ? previousRooms : [...previousRooms, room];
+            });
+
+        } catch (error) {
+            console.error("Room not found", error);
+        }
+
+    }
+
+
     return (
         <div className="chat-container">
 
@@ -191,6 +220,7 @@ function ChatBox() {
                         roomInput={roomInput}
                         setRoomInput={setRoomInput}
                         joinRoom={joinRoom}
+                        joinRoomByCode={joinRoomByCode}
                         joinedRooms={joinedRooms}
                         activeRoomId={roomId}
                         isConnected={isConnected}
@@ -210,9 +240,9 @@ function ChatBox() {
                         ☰
                     </button>
 
-                    {roomId && (
-                        <span className={"room-id"}>
-                            Room: {roomId}
+                    {activeRoom && (
+                        <span className={"room-name"}>
+                           {activeRoom?.name}
                         </span>
                     )}
 
