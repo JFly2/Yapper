@@ -1,65 +1,8 @@
-# Yapper
+# Yapper Frontend
 
-Yapper is a full-stack real-time chat application built with Spring Boot and React. It supports JWT authentication, authenticated WebSocket communication, room-based messaging, persistent message history, and PostgreSQL storage.
-
-Users can register, log in, join rooms using generated join codes, switch between rooms, and exchange messages in real time.
-
-## Features
-
-### Authentication
-
-* User registration and login
-* BCrypt password hashing
-* JWT generation and validation
-* Protected REST endpoints
-* Authenticated STOMP WebSocket connections
-* Logout functionality
-
-### Messaging
-
-* Real-time messaging with STOMP and SockJS
-* Room-based WebSocket subscriptions
-* PostgreSQL message persistence
-* Message history loading
-* Backend-controlled sender identity
-* Message timestamps
-* Message date dividers
-* Separate styling for the authenticated user's messages
-
-### Rooms
-
-* PostgreSQL-backed room records
-* Generated six-character join codes
-* Join rooms by code
-* Internal numeric room IDs
-* User-facing room names
-* Public or private room setting
-* Optional room categories
-* Room switching
-* Joined-room sidebar
-* Collapsible sidebar
-
-Joined rooms are currently stored in frontend state and reset when the page is refreshed. Persistent user-room membership is in development.
+The Yapper frontend is a React and Vite application that provides the user interface for authentication, joining chat rooms, switching between rooms, loading message history, and exchanging messages in real time.
 
 ## Tech Stack
-
-### Backend
-
-* Java 17
-* Spring Boot
-* Spring Security
-* Spring Web MVC
-* Spring WebSocket
-* STOMP
-* SockJS
-* Spring Data JPA
-* PostgreSQL
-* JJWT
-* BCrypt
-* Lombok
-* Maven
-
-### Frontend
 
 * React
 * Vite
@@ -70,130 +13,153 @@ Joined rooms are currently stored in frontend state and reset when the page is r
 * SockJS
 * CSS
 
-## Repository Structure
+## Responsibilities
+
+The frontend is responsible for:
+
+* Displaying registration and login forms
+* Storing the JWT after login
+* Sending authenticated REST requests
+* Establishing an authenticated STOMP connection
+* Joining rooms using room codes
+* Loading room message history
+* Subscribing to room-specific WebSocket topics
+* Sending and displaying real-time messages
+* Switching between joined rooms
+* Displaying timestamps and date dividers
+* Styling the authenticated user's messages separately
+* Logging the user out
+
+## Project Structure
 
 ```text
-yapper/
-├── backend/
-│   ├── src/
-│   ├── pom.xml
-│   ├── mvnw
-│   ├── mvnw.cmd
-│   └── README.md
-│
-├── frontend/
-│   ├── src/
-│   ├── package.json
-│   ├── package-lock.json
-│   ├── vite.config.js
-│   └── README.md
-│
+frontend/
+├── src/
+│   ├── components/
+│   ├── pages/
+│   ├── api.js
+│   ├── App.jsx
+│   └── main.jsx
+├── package.json
+├── package-lock.json
+├── vite.config.js
 └── README.md
 ```
 
-The backend and frontend each include their own README with more detailed documentation.
+The exact component structure may change as development continues.
 
-## Application Flow
+## Main Pages
 
-### Registration
+### Registration Page
 
-Users register with an email, username, and password.
+The registration page collects:
 
-The backend:
+* Email
+* Username
+* Password
 
-1. Checks whether the username already exists.
-2. Checks whether the email already exists.
-3. Hashes the password with BCrypt.
-4. Stores the user in PostgreSQL.
+It sends the registration request to:
 
-Example request:
-
-```json
-{
-  "email": "user@example.com",
-  "username": "user",
-  "password": "password"
-}
+```http
+POST /api/auth/register
 ```
 
-### Login
+### Login Page
 
-Users log in with a username and password.
+The login page collects a username and password.
 
-The backend:
+It sends the login request to:
 
-1. Finds the user by username.
-2. Verifies the submitted password with BCrypt.
-3. Generates a JWT.
-4. Returns the token to the frontend.
-
-Example request:
-
-```json
-{
-  "username": "user",
-  "password": "password"
-}
+```http
+POST /api/auth/login
 ```
 
-The frontend stores the JWT in local storage:
+After a successful login, the JWT is stored in local storage:
 
 ```javascript
 localStorage.setItem("jwt_token", token);
 ```
 
-The token is included in authenticated REST requests:
+The user is then redirected to the chat interface.
+
+### Chat Page
+
+The chat page contains the main room and messaging interface.
+
+It supports:
+
+* WebSocket connection status
+* Joining rooms by code
+* Switching between rooms
+* Loading message history
+* Receiving messages in real time
+* Sending messages
+* Logging out
+
+## Main Components
+
+### `ChatBox`
+
+Controls the main chat behavior, including:
+
+* Establishing the STOMP connection
+* Managing the active room
+* Subscribing and unsubscribing from room topics
+* Loading message history
+* Sending messages
+* Receiving live messages
+
+### `RoomSidebar`
+
+Displays joined rooms and allows the user to:
+
+* Enter a room join code
+* Join a room
+* Select an existing joined room
+* Collapse or expand the sidebar
+
+Joined rooms are currently stored in React state and disappear after a browser refresh.
+
+### `MessageList`
+
+Displays the current room's messages and automatically scrolls toward the newest message.
+
+### `Message`
+
+Displays an individual message, including:
+
+* Sender
+* Message content
+* Timestamp
+* Styling based on whether the message belongs to the authenticated user
+
+### `MessageInput`
+
+Provides a controlled input and send button for sending messages to the active room.
+
+## Backend Communication
+
+The frontend communicates with the backend at:
+
+```text
+http://localhost:8080
+```
+
+Axios is used for REST requests.
+
+Authenticated requests include:
 
 ```http
 Authorization: Bearer <token>
 ```
 
-## Room Flow
-
-Rooms use two identifiers:
-
-* `id`: internal numeric database ID
-* `joinCode`: user-facing code used to find and join a room
-
-Example room response:
-
-```json
-{
-  "id": 1,
-  "name": "Weekend Group",
-  "joinCode": "NF5V9H",
-  "publicRoom": false,
-  "category": null
-}
-```
-
-The room-joining flow is:
+The WebSocket connection uses:
 
 ```text
-User enters a join code
-        ↓
-Frontend requests the room by code
-        ↓
-Backend returns the room
-        ↓
-Frontend adds and selects the room
-        ↓
-Stored message history is loaded
-        ↓
-Frontend subscribes to the room's WebSocket topic
+http://localhost:8080/ws
 ```
 
-The room name and join code are displayed to the user. The numeric room ID is used internally for database operations, message history, and WebSocket subscriptions.
-
-## WebSocket Flow
-
-The frontend connects to the backend WebSocket endpoint:
-
-```text
-/ws
-```
-
-The JWT is sent in the STOMP `CONNECT` headers:
+The JWT is included in the STOMP `CONNECT` headers:
 
 ```javascript
 stompClient.connect(
@@ -205,212 +171,49 @@ stompClient.connect(
 );
 ```
 
-The backend WebSocket interceptor:
-
-1. Intercepts the STOMP `CONNECT` frame.
-2. Extracts the JWT.
-3. Validates the token.
-4. Loads the authenticated user.
-5. Attaches the user to the WebSocket session as the principal.
-
 Messages are sent to:
 
 ```text
 /app/yapper.send
 ```
 
-Clients subscribe to:
+The active room subscription uses:
 
 ```text
 /topic/room/{roomId}
 ```
 
-Example outgoing message payload:
+## Room Joining Flow
 
-```json
-{
-  "roomId": 1,
-  "content": "Hello"
-}
-```
+The user enters a six-character room code.
 
-The frontend does not provide the sender name. The backend determines the sender from the authenticated WebSocket principal.
-
-## REST API
-
-### Authentication
-
-#### Register a user
-
-```http
-POST /api/auth/register
-```
-
-Registers a new user with an email, username, and password.
-
-#### Log in
-
-```http
-POST /api/auth/login
-```
-
-Authenticates a user and returns a JWT.
-
-### Messages
-
-#### Get message history
-
-```http
-GET /api/messages/{roomId}
-```
-
-Returns the stored messages for a room.
-
-#### Save a message through REST
-
-```http
-POST /api/messages
-```
-
-Saves a message through the REST API. Messages are normally sent through WebSocket.
-
-#### Verify authentication
-
-```http
-GET /api/messages/test
-```
-
-Returns the authenticated username and can be used to verify a JWT.
-
-### Rooms
-
-#### Create a room
-
-```http
-POST /api/rooms
-```
-
-Example request:
-
-```json
-{
-  "name": "Weekend Group",
-  "publicRoom": false,
-  "category": ""
-}
-```
-
-The backend creates the room and generates a unique six-character join code.
-
-#### Find a room by join code
+The frontend requests the room from:
 
 ```http
 GET /api/rooms/code/{joinCode}
 ```
 
-Example:
+After receiving the room:
 
-```http
-GET /api/rooms/code/NF5V9H
-```
+1. The room is added to the joined-room sidebar.
+2. The room becomes the active room.
+3. Stored message history is requested.
+4. The previous WebSocket subscription is removed.
+5. The frontend subscribes to the new room's topic.
 
-## Local Development
+The room name is displayed in the interface, while the numeric room ID is used internally.
 
-### Prerequisites
+## Running the Frontend
 
-Install the following:
+The backend should be running first.
 
-* JDK 17 or newer
-* Node.js
-* npm
-* PostgreSQL
-
-The repository includes the Maven wrapper, so Maven does not need to be installed globally.
-
-Verify Java:
-
-```bash
-java -version
-```
-
-## Backend Setup
-
-From the repository root, navigate to the backend:
-
-```bash
-cd backend
-```
-
-Create the PostgreSQL database:
-
-```sql
-CREATE DATABASE yapperdb;
-```
-
-Configure the database connection in:
-
-```text
-backend/src/main/resources/application.properties
-```
-
-Example configuration:
-
-```properties
-spring.application.name=yapper-backend
-
-spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5432/yapperdb}
-spring.datasource.username=${DB_USERNAME:}
-spring.datasource.password=${DB_PASSWORD:}
-
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
-spring.jpa.open-in-view=false
-```
-
-Set the local database credentials:
-
-```bash
-export DB_URL="jdbc:postgresql://localhost:5432/yapperdb"
-export DB_USERNAME="your_postgres_username"
-export DB_PASSWORD="your_postgres_password"
-```
-
-Run the backend with the Maven wrapper:
-
-```bash
-./mvnw spring-boot:run
-```
-
-A globally installed Maven version can also be used:
-
-```bash
-mvn spring-boot:run
-```
-
-The backend runs at:
-
-```text
-http://localhost:8080
-```
-
-A successful startup should include output similar to:
-
-```text
-Tomcat started on port 8080
-Started YapperBackendApplication
-```
-
-The first startup may take longer while Maven downloads the required dependencies.
-
-## Frontend Setup
-
-From the repository root, navigate to the frontend:
+From the repository root:
 
 ```bash
 cd frontend
 ```
 
-Install the dependencies:
+Install dependencies:
 
 ```bash
 npm install
@@ -430,45 +233,58 @@ http://localhost:5173
 
 Open that address in a browser.
 
-The backend must be running for authentication, room lookup, message history, and WebSocket messaging to work.
+## Available Scripts
 
-## Starting the Project After Initial Setup
-
-Open one terminal and start the backend:
+Start the development server:
 
 ```bash
-cd backend
-./mvnw spring-boot:run
-```
-
-Open another terminal and start the frontend:
-
-```bash
-cd frontend
 npm run dev
 ```
 
-Then open:
+Create a production build:
 
-```text
-http://localhost:5173
+```bash
+npm run build
 ```
 
-## Development Status
+Preview the production build locally:
 
-The core authentication, room lookup, message persistence, and real-time messaging flows are functional.
+```bash
+npm run preview
+```
 
-Currently in development:
+## Current Status
+
+The following frontend functionality is working:
+
+* Registration page
+* Login page
+* JWT storage
+* Authenticated API requests
+* Authenticated STOMP connections
+* Chat interface
+* Joining rooms by code
+* Room switching
+* Joined-room sidebar
+* Collapsible sidebar
+* Message history loading
+* Sending real-time messages
+* Receiving real-time messages
+* Message timestamps
+* Date dividers
+* Separate styling for the authenticated user's messages
+* Logout
+
+## In Development
 
 * Frontend room-creation form
-* Persistent user-room memberships
+* Persistent joined-room list
 * Loading joined rooms after login or refresh
-* Room ownership
-* Room management controls
-* Public room discovery
-* Category filtering
 * User-facing invalid join-code errors
-* Improved WebSocket reconnect handling
+* Public room discovery
+* Room category browsing
+* Room ownership and management controls
+* Improved connection and reconnection handling
 * Production deployment configuration
 
 ## Current Limitations
@@ -476,40 +292,5 @@ Currently in development:
 * Joined rooms are stored only in React state.
 * Joined rooms disappear after a browser refresh.
 * Rooms cannot yet be created through the frontend.
-* Public room discovery is not yet implemented.
-* Room ownership and deletion permissions are not yet implemented.
-* Invalid join-code errors are logged to the browser console instead of being displayed in the interface.
-
-## Roadmap
-
-* Persistent user-room membership table
-* Leave-room functionality
-* Room ownership and permissions
-* Rename-room functionality
-* Delete-room functionality for room owners
-* Public room search
-* Room category browsing
-* Refresh tokens
-* Email verification
-* Password reset
-* Private messages
-* Friend system
-* Typing indicators
-* Read receipts
-* Online presence
-* Improved reconnect handling
-* Production database configuration
-* Backend and frontend deployment
-
-## Security
-
-* Passwords are hashed with BCrypt.
-* JWTs are required for protected REST endpoints.
-* JWTs are validated when establishing STOMP connections.
-* Message sender identity is determined by the authenticated backend principal.
-* Database credentials and JWT secrets should not be committed to Git.
-* Local request files containing active JWTs should not be committed.
-
-## Project Status
-
-Yapper is under active development. Its core authentication, room lookup, message persistence, and real-time chat functionality are working. The next major development step is persistent room membership so users retain their joined rooms across sessions.
+* Invalid join-code errors are currently logged to the browser console.
+* Public room discovery is not yet available.
