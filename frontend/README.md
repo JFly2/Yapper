@@ -1,19 +1,6 @@
 # Yapper Frontend
 
-Yapper Frontend is the React frontend for **Yapper**, a real-time chat application with JWT authentication, room-based messaging, and STOMP WebSocket communication.
-
-## Features
-
-* User registration page
-* User login page
-* JWT token storage
-* Protected chat page
-* Room selection sidebar
-* Realtime chat interface
-* STOMP WebSocket connection
-* Authenticated WebSocket connection using JWT
-* Message input and message list components
-* Axios API setup for backend communication
+The Yapper frontend is a React and Vite application that provides the user interface for authentication, joining chat rooms, switching between rooms, loading message history, and exchanging messages in real time.
 
 ## Tech Stack
 
@@ -26,93 +13,162 @@ Yapper Frontend is the React frontend for **Yapper**, a real-time chat applicati
 * SockJS
 * CSS
 
+## Responsibilities
+
+The frontend is responsible for:
+
+* Displaying registration and login forms
+* Storing the JWT after login
+* Sending authenticated REST requests
+* Establishing an authenticated STOMP connection
+* Joining rooms using room codes
+* Loading room message history
+* Subscribing to room-specific WebSocket topics
+* Sending and displaying real-time messages
+* Switching between joined rooms
+* Displaying timestamps and date dividers
+* Styling the authenticated user's messages separately
+* Logging the user out
+
 ## Project Structure
 
 ```text
-src/
-├── components/
-│   ├── ChatBox.jsx
-│   ├── Message.jsx
-│   ├── MessageInput.jsx
-│   ├── MessageList.jsx
-│   ├── Navbar.jsx
-│   └── RoomSidebar.jsx
-├── pages/
-│   ├── ChatPage.jsx
-│   ├── LoginPage.jsx
-│   └── RegisterPage.jsx
-├── services/
-│   └── api.js
-├── styles/
-│   ├── ChatBox.css
-│   ├── LoginPage.css
-│   ├── MessageInput.css
-│   ├── MessageList.css
-│   ├── RegisterPage.css
-│   └── RoomSideBar.css
-├── App.jsx
-├── main.jsx
-└── index.css
+frontend/
+├── src/
+│   ├── components/
+│   ├── pages/
+│   ├── api.js
+│   ├── App.jsx
+│   └── main.jsx
+├── package.json
+├── package-lock.json
+├── vite.config.js
+└── README.md
 ```
 
-## Authentication Flow
+The exact component structure may change as development continues.
 
-Users register or log in through the frontend.
+## Main Pages
 
-After a successful login, the backend returns a JWT token. The frontend stores the token in local storage:
+### Registration Page
+
+The registration page collects:
+
+* Email
+* Username
+* Password
+
+It sends the registration request to:
+
+```http
+POST /api/auth/register
+```
+
+### Login Page
+
+The login page collects a username and password.
+
+It sends the login request to:
+
+```http
+POST /api/auth/login
+```
+
+After a successful login, the JWT is stored in local storage:
 
 ```javascript
 localStorage.setItem("jwt_token", token);
 ```
 
-The token is later used for authenticated REST requests and WebSocket connections.
+The user is then redirected to the chat interface.
 
-## API Configuration
+### Chat Page
 
-The frontend uses an Axios instance in:
+The chat page contains the main room and messaging interface.
+
+It supports:
+
+* WebSocket connection status
+* Joining rooms by code
+* Switching between rooms
+* Loading message history
+* Receiving messages in real time
+* Sending messages
+* Logging out
+
+## Main Components
+
+### `ChatBox`
+
+Controls the main chat behavior, including:
+
+* Establishing the STOMP connection
+* Managing the active room
+* Subscribing and unsubscribing from room topics
+* Loading message history
+* Sending messages
+* Receiving live messages
+
+### `RoomSidebar`
+
+Displays joined rooms and allows the user to:
+
+* Enter a room join code
+* Join a room
+* Select an existing joined room
+* Collapse or expand the sidebar
+
+Joined rooms are currently stored in React state and disappear after a browser refresh.
+
+### `MessageList`
+
+Displays the current room's messages and automatically scrolls toward the newest message.
+
+### `Message`
+
+Displays an individual message, including:
+
+* Sender
+* Message content
+* Timestamp
+* Styling based on whether the message belongs to the authenticated user
+
+### `MessageInput`
+
+Provides a controlled input and send button for sending messages to the active room.
+
+## Backend Communication
+
+The frontend communicates with the backend at:
 
 ```text
-src/services/api.js
+http://localhost:8080
 ```
 
-Example:
+Axios is used for REST requests.
 
-```javascript
-import axios from "axios";
+Authenticated requests include:
 
-const api = axios.create({
-    baseURL: "http://localhost:8080/api"
-});
-
-export default api;
+```http
+Authorization: Bearer <token>
 ```
 
-This keeps backend API calls centralized.
-
-## WebSocket Flow
-
-The chat page connects to the backend WebSocket endpoint:
+The WebSocket connection uses:
 
 ```text
 http://localhost:8080/ws
 ```
 
-The JWT token is sent during the STOMP connection:
+The JWT is included in the STOMP `CONNECT` headers:
 
 ```javascript
 stompClient.connect(
-    {
-        Authorization: `Bearer ${token}`
-    },
-    onConnect,
-    onError
+  {
+    Authorization: `Bearer ${token}`
+  },
+  onConnect,
+  onError
 );
-```
-
-Users can join a room by entering a room ID. The frontend subscribes to:
-
-```text
-/topic/room/{roomId}
 ```
 
 Messages are sent to:
@@ -121,18 +177,41 @@ Messages are sent to:
 /app/yapper.send
 ```
 
-The frontend sends only the room ID and message content. The backend controls the sender identity using the authenticated WebSocket principal.
+The active room subscription uses:
 
-Example outgoing message:
-
-```json
-{
-  "roomId": 1,
-  "content": "Hello"
-}
+```text
+/topic/room/{roomId}
 ```
 
+## Room Joining Flow
+
+The user enters a six-character room code.
+
+The frontend requests the room from:
+
+```http
+GET /api/rooms/code/{joinCode}
+```
+
+After receiving the room:
+
+1. The room is added to the joined-room sidebar.
+2. The room becomes the active room.
+3. Stored message history is requested.
+4. The previous WebSocket subscription is removed.
+5. The frontend subscribes to the new room's topic.
+
+The room name is displayed in the interface, while the numeric room ID is used internally.
+
 ## Running the Frontend
+
+The backend should be running first.
+
+From the repository root:
+
+```bash
+cd frontend
+```
 
 Install dependencies:
 
@@ -140,64 +219,78 @@ Install dependencies:
 npm install
 ```
 
+Start the Vite development server:
+
+```bash
+npm run dev
+```
+
+The frontend normally runs at:
+
+```text
+http://localhost:5173
+```
+
+Open that address in a browser.
+
+## Available Scripts
+
 Start the development server:
 
 ```bash
 npm run dev
 ```
 
-The frontend usually runs on:
+Create a production build:
 
-```text
-http://localhost:5173
+```bash
+npm run build
 ```
 
-## Backend Requirement
+Preview the production build locally:
 
-The backend must be running on:
-
-```text
-http://localhost:8080
-```
-
-The backend must also allow CORS for:
-
-```text
-http://localhost:5173
+```bash
+npm run preview
 ```
 
 ## Current Status
 
-Implemented:
+The following frontend functionality is working:
 
-* Register page
+* Registration page
 * Login page
-* JWT token storage
-* React Router setup
-* Chat page layout
-* Room sidebar
-* Message input
-* Message list
-* STOMP WebSocket connection
-* JWT sent during WebSocket connection
-
-In progress:
-
-* Realtime message display
-* Room switching behavior
+* JWT storage
+* Authenticated API requests
+* Authenticated STOMP connections
+* Chat interface
+* Joining rooms by code
+* Room switching
+* Joined-room sidebar
+* Collapsible sidebar
 * Message history loading
-* Final WebSocket message debugging
-* UI polish
-
-## Future Improvements
-
-* Protected route wrapper
-* Auth context
-* Logout button
-* Persistent room list
+* Sending real-time messages
+* Receiving real-time messages
 * Message timestamps
-* Better error handling
-* Loading states
-* Typing indicators
-* User profile display
-* Deployment configuration
+* Date dividers
+* Separate styling for the authenticated user's messages
+* Logout
+
+## In Development
+
+* Frontend room-creation form
+* Persistent joined-room list
+* Loading joined rooms after login or refresh
+* User-facing invalid join-code errors
+* Public room discovery
+* Room category browsing
+* Room ownership and management controls
+* Improved connection and reconnection handling
+* Production deployment configuration
+
+## Current Limitations
+
+* Joined rooms are stored only in React state.
+* Joined rooms disappear after a browser refresh.
+* Rooms cannot yet be created through the frontend.
+* Invalid join-code errors are currently logged to the browser console.
+* Public room discovery is not yet available.
