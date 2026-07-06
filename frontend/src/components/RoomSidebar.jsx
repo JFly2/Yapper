@@ -1,7 +1,7 @@
 import "../styles/RoomSideBar.css";
 import { useNavigate } from "react-router-dom";
 
-export function RoomSidebar({roomInput, setRoomInput, joinRoom, joinRoomByCode, joinedRooms, activeRoomId, isConnected}) {
+export function RoomSidebar({roomInput, setRoomInput, joinRoom, joinRoomByCode, joinedRooms, activeRoomId, isConnected, onOpenCreateRoom}) {
 
     const navigate = useNavigate();
 
@@ -31,17 +31,11 @@ export function RoomSidebar({roomInput, setRoomInput, joinRoom, joinRoomByCode, 
             </h2>
 
             <input
-
                 className="room-input"
-
                 type="text"
-
                 value={roomInput}
-
                 placeholder={"Enter join code"}
-
                 onChange={(event) =>
-
                     setRoomInput(
                         event.target.value
                     )
@@ -63,8 +57,16 @@ export function RoomSidebar({roomInput, setRoomInput, joinRoom, joinRoomByCode, 
                 {isConnected ? "Join Room": "Connecting..."}
             </button>
 
-            <div>
+            <button
+                type={"button"}
+                className={"create-room-button"}
+                onClick={onOpenCreateRoom}
+                disabled={!isConnected}
+            >
+                Create Room
+            </button>
 
+            <div>
                 <p
                     className="joined-rooms"
                 >
@@ -84,6 +86,7 @@ export function RoomSidebar({roomInput, setRoomInput, joinRoom, joinRoomByCode, 
                 >
                         {room.name}
                     </button>
+
                         ))}
             </div>
 

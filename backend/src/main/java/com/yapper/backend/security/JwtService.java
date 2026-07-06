@@ -26,12 +26,19 @@ public class JwtService {
     }
 
 
-    public String generateToken(String username){
-        return Jwts.builder().subject(username)
-            .issuedAt(new Date(System.currentTimeMillis()))
-            .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
-            .signWith(getSigningKey())
-            .compact();
+    public String generateToken(String username) {
+        long now = System.currentTimeMillis();
+
+        System.out.println(
+                "Generating new JWT for " + username + " at " + new Date(now)
+        );
+
+        return Jwts.builder()
+                .subject(username)
+                .issuedAt(new Date(now))
+                .expiration(new Date(now + 1000 * 60 * 60))
+                .signWith(getSigningKey())
+                .compact();
     }
 
     public Jws<Claims> extractClaim(String token){

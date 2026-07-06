@@ -1,6 +1,6 @@
 
 .login-container {
-    background-color: rgb(238 238 238 / 0.44);
+    background-color: transparent;
     width: 100%;
     max-width: 400px;
     margin: 20px auto;
@@ -24,12 +24,12 @@
 
 .login-input {
     padding: 12px 15px;
-    border-radius: 10px;
-    border: none;
+    border-color: transparent;
+    border-bottom-color: #4a4d53;
+    border-width: 1px;
     font-size: 15px;
-    background-color: lightgrey;
+    background-color: transparent;
     color: white;
-
 }
 
 .login-button {

@@ -10,4 +10,7 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
     List<Message> findByRoomId(Long roomId);
     List<Message> findByRoomIdOrderByTimestampAsc(Long roomId);
+    void deleteByRoomId(Long id);
+    
+
 }

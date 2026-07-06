@@ -6,6 +6,7 @@ import api from "../services/api.js";
 import { MessageInput } from "./MessageInput.jsx";
 import { RoomSidebar } from "./RoomSidebar.jsx";
 import { MessageList } from "./MessageList.jsx";
+import {CreateRoomForm} from "./CreateRoomForm.jsx";
 
 function ChatBox() {
 
@@ -22,6 +23,7 @@ function ChatBox() {
     const [joinedRooms, setJoinedRooms] = useState([]);
     const [isConnected, setIsConnected] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [createRoomOpen, setCreateRoomOpen] = useState(false);
 
     const currentUsername = localStorage.getItem("username");
 
@@ -188,27 +190,139 @@ function ChatBox() {
         }
 
         try {
-            const response = await api.get(
+            const response = await api.post(
                 `/rooms/code/${joinCode}`
             );
 
-            const room = response.data;
-
-            await joinRoom(String(room.id));
-
-            setJoinedRooms((previousRooms) => {
-                const prevJoined = previousRooms.some(
-                    (joinedRooms) => joinedRooms.id === room.id
-                );
-
-                return prevJoined ? previousRooms : [...previousRooms, room];
-            });
+            await activateRoom(response.data);
 
         } catch (error) {
             console.error("Room not found", error);
         }
 
     }
+
+    async function createRoom(roomData){
+        try {
+            const response = await api.post("/rooms", roomData);
+            const createdRoom = response.data;
+
+            await activateRoom(createdRoom);
+
+            return createdRoom;
+        } catch(error){
+            console.error("Unable to create room", error);
+            throw error;
+        }
+    }
+
+    async function activateRoom(room) {
+        setJoinedRooms((previousRooms) => {
+            const prevJoined = previousRooms.some(
+                (joinedRooms) => joinedRooms.id === room.id
+            );
+
+            return prevJoined ? previousRooms : [...previousRooms, room];
+        });
+
+        await joinRoom(String(room.id));
+    }
+
+
+    async function loadJoinedRooms(){
+        try {
+            const response = await api.get("/rooms/joined");
+            setJoinedRooms(response.data);
+        } catch (error){
+            console.error("Unable to load joined rooms:", error);
+        }
+
+    }
+
+    useEffect(() => {
+        void loadJoinedRooms();
+    }, []);
+
+    async function leaveRoom(roomToLeave){
+        try {
+            await api.delete(`/rooms/${roomToLeave.id}/leave`);
+
+            setJoinedRooms((currentRooms) => currentRooms.filter(
+                (room) => room.id !== roomToLeave.id
+                ));
+
+            const leavingActiveRoom = String(roomToLeave.id) === roomId;
+
+            if (leavingActiveRoom){
+                if (currentSubscription){
+                    currentSubscription.unsubscribe();
+                    setCurrentSubscription(null);
+                }
+                setRoomId("");
+                setMessages([]);
+            }
+
+        } catch (error) {
+            console.error("Unable to leave room:", error);
+        }
+    }
+
+    async function deleteRoom(roomToDelete){
+        try {
+            await api.delete(`/rooms/${roomToDelete.id}`)
+
+            setJoinedRooms((currentRooms) => currentRooms.filter(
+                (room) => room.id !== roomToDelete.id
+            ));
+
+            const deletingActiveRoom = String(roomToDelete.id) === roomId;
+
+            if (deletingActiveRoom){
+                if (currentSubscription){
+                    currentSubscription.unsubscribe();
+                    setCurrentSubscription(null);
+                }
+                setRoomId("");
+                setMessages([]);
+            }
+
+        } catch (error){
+            console.error("Unable to delete room: ", error);
+        }
+    }
+
+    async function handleLeaveActiveRoom(){
+        if (!activeRoom) {
+            return;
+        }
+
+        const confirmed = window.confirm(`Leave ${activeRoom.name}?`);
+
+        if (!confirmed){
+            return;
+        }
+
+        await leaveRoom(activeRoom);
+
+    }
+
+    async function handleDeleteActiveRoom(){
+        if (!activeRoom){
+            return;
+        }
+
+        const confirmed = window.confirm(`Delete ${activeRoom.name}? This will delete it for everyone!`);
+
+        if (!confirmed){
+            return;
+        }
+
+        if (activeRoom.role === "OWNER"){
+            await deleteRoom(activeRoom);
+        }
+
+    }
+
 
 
     return (
@@ -224,6 +338,7 @@ function ChatBox() {
                         joinedRooms={joinedRooms}
                         activeRoomId={roomId}
                         isConnected={isConnected}
+                        onOpenCreateRoom={() => setCreateRoomOpen(true)}
                     />
                 )}
             </div>
@@ -240,12 +355,32 @@ function ChatBox() {
                         ☰
                     </button>
 
-                    {activeRoom && (
-                        <span className={"room-name"}>
-                           {activeRoom?.name}
-                        </span>
-                    )}
+                    {roomId && activeRoom && (
+                        <>
+                            <span className="room-name">
+                                {activeRoom.name}
+                            </span>
 
+                            {activeRoom.role === "OWNER" ? (
+                            <button
+                                type={"button"}
+                                className={"leave-room-button"}
+                                onClick={handleDeleteActiveRoom}
+                            >
+                                Delete Room
+                            </button>
+                            ):(
+                            <button
+                                type="button"
+                                className="leave-room-button"
+                                onClick={handleLeaveActiveRoom}
+                            >
+                                Leave Room
+                            </button>
+
+                        )}
+                        </>
+                    )}
                 </div>
 
                 {!roomId ? (
@@ -268,6 +403,45 @@ function ChatBox() {
                     </>
                 )}
             </div>
+
+            {createRoomOpen && (
+                <div
+                    className={"modal-backdrop"}
+                    onMouseDown={() =>
+                        setCreateRoomOpen(false)
+                }
+                >
+
+                    <div
+                        className={"create-room-modal"}
+                        role={"dialog"}
+                        aria-modal={"true"}
+                        aria-labelledby={"create-room-title"}
+                        onMouseDown={(event) =>
+                    event.stopPropagation()
+                    }
+                        >
+                        <button
+                            type={"button"}
+                            className={"modal-close-button"}
+                            aria-label={"Close create room"}
+                            onClick={() =>
+                        setCreateRoomOpen(false)
+                        }
+                        >
+                            ×
+                        </button>
+
+
+                        <CreateRoomForm
+                            createRoom={createRoom}
+                            />
+                    </div>
+
+
+                </div>
+            )
+            }
         </div>
     );
 }

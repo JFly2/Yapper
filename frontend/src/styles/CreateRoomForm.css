@@ -1,0 +1,52 @@
+.create-room-section {}
+
+.room-name-input {
+    background-color: transparent;
+    border-color: transparent;
+    border-bottom-color: #4a4d53;
+    border-width: 0.1px;
+    color: #b5bac1;
+    padding: 8px 0 6px;
+}
+
+.room-category-input { background-color: transparent;
+    border-color: transparent;
+    border-bottom-color: #4a4d53;
+    border-width: 0.1px;
+    color: #b5bac1;
+    padding: 0 0 6px;
+
+}
+
+.room-name-input:focus, .room-category-input:focus {
+    border-bottom-color: white;
+}
+
+
+.checkbox-label {
+    font-size: 12px;
+}
+
+.create-room{
+    margin-top: 10px;
+    width: 100px;
+    height: 30px;
+    font-weight: bold;
+    font-size: 11px;
+    color: white;
+    background-color:rgb(0 128 0 / 0.56);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.copy-button {
+    font-weight: bold;
+    font-size: 12px;
+    color: white;
+    background-color:rgb(0 128 0 / 0.56);
+    border: none;
+    border-radius: 10px;
+    padding: 5px 5px 5px;
+    cursor: pointer;
+}

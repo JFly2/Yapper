@@ -11,11 +11,18 @@
 }
 
 .room-input {
-    border: none;
+    border-color: transparent;
+    border-width: 1px;
+    border-bottom-color: #4a4d53;
+    background-color: transparent;
     height: 30px;
-    border-radius: 8px;
     margin-bottom: 10px;
+    color: #b5bac1;
     cursor: pointer;
+}
+
+.room-input:focus {
+    border-bottom-color: white;
 }
 
 .sidebar-heading {
@@ -52,7 +59,13 @@
     border-radius: 6px;
     cursor: pointer;
     text-align: left;
+    font-weight: bold;
 }
+
+.room-item:hover{
+    opacity: .8;
+}
+
 
 .active-room {
     font-weight: bold;
@@ -65,4 +78,24 @@
     height: 30px;
     border-radius: 8px;
     background-color: red;
+    cursor: pointer;
+}
+
+.logout-button:hover{
+    opacity: .8;
+}
+
+.create-room-button {
+    margin-top: 10px;
+    height: 30px;
+    font-weight: bold;
+    color: white;
+    background-color:rgb(0 128 0 / 0.56);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.create-room-button:hover{
+    opacity: 0.8;
 }

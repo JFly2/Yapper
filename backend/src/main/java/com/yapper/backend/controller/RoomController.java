@@ -1,12 +1,17 @@
 package com.yapper.backend.controller;
 
 import com.yapper.backend.dto.CreateRoomRequest;
+import com.yapper.backend.dto.JoinedRoomResponse;
 import com.yapper.backend.dto.RoomResponse;
 import com.yapper.backend.service.RoomService;
+import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/rooms")
@@ -19,16 +24,51 @@ public class RoomController {
 
 
     @PostMapping
-    public ResponseEntity<RoomResponse> createRoom (@RequestBody CreateRoomRequest request){
-            RoomResponse room = roomService.createRoom(request);
+    public ResponseEntity<JoinedRoomResponse> createRoom (@RequestBody CreateRoomRequest request, Authentication authentication){
+            JoinedRoomResponse response = roomService.createRoom(request, authentication.getName());
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(room);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/code/{joinCode}")
     public ResponseEntity<RoomResponse> findByJoinCode(@PathVariable String joinCode){
         return ResponseEntity.ok(roomService.findByJoinCode(joinCode));
     }
+
+    @PostMapping("/code/{joinCode}")
+    public ResponseEntity<RoomResponse> joinRoom(@PathVariable String joinCode, Authentication authentication){
+
+        RoomResponse room = roomService.joinRoom(joinCode, authentication.getName());
+
+        return ResponseEntity.ok(room);
+    }
+
+
+    @GetMapping("/joined")
+    public ResponseEntity<List<JoinedRoomResponse>> getJoinedRooms (Authentication authentication){
+
+        List<JoinedRoomResponse> rooms = roomService.getJoinedRooms(authentication.getName());
+
+        return ResponseEntity.ok(rooms);
+    }
+
+    @DeleteMapping("/{roomId}/leave")
+    public ResponseEntity<Void> leaveRoom(@PathVariable Long roomId, Authentication authentication){
+
+        roomService.leaveRoom(roomId, authentication.getName());
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{roomId}")
+    public ResponseEntity<Void> deleteRoom(@PathVariable Long roomId, Authentication authentication){
+
+        roomService.deleteRoom(roomId, authentication.getName());
+
+        return ResponseEntity.noContent().build();
+    }
+
+
 
 
 }

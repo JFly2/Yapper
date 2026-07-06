@@ -1,14 +1,28 @@
 package com.yapper.backend.service;
 
 import com.yapper.backend.dto.CreateRoomRequest;
+import com.yapper.backend.dto.JoinedRoomResponse;
 import com.yapper.backend.dto.RoomResponse;
 import com.yapper.backend.model.Room;
+import com.yapper.backend.model.RoomMembership;
+import com.yapper.backend.model.User;
+import com.yapper.backend.repository.MessageRepository;
+import com.yapper.backend.repository.RoomMembershipRepository;
 import com.yapper.backend.repository.RoomRepository;
+import com.yapper.backend.repository.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
+import org.hibernate.mapping.Join;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.security.SecureRandom;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class RoomService {
@@ -16,12 +30,18 @@ public class RoomService {
     private final static int JOIN_CODE_LENGTH = 6;
     private final static SecureRandom rand = new SecureRandom();
     private final RoomRepository roomRepository;
+    private final UserRepository userRepository;
+    private final RoomMembershipRepository roomMembershipRepository;
+    private final MessageRepository messageRepository;
 
-    public RoomService (RoomRepository roomRepository){
-     this.roomRepository = roomRepository;
- }
+    public RoomService (RoomRepository roomRepository, UserRepository userRepository, RoomMembershipRepository roomMembershipRepository, MessageRepository messageRepository){
+        this.roomRepository = roomRepository;
+        this.userRepository = userRepository;
+        this.roomMembershipRepository = roomMembershipRepository;
+        this.messageRepository = messageRepository;
+    }
 
- private RoomResponse convertToResponse (Room room){
+ private RoomResponse toRoomResponse(Room room){
 
         return new RoomResponse(
               room.getId(),
@@ -29,6 +49,19 @@ public class RoomService {
               room.getJoinCode(),
               room.isPublicRoom(),
               room.getCategory()
+        );
+ }
+
+ private JoinedRoomResponse toJoinedRoomResponse(RoomMembership membership){
+        Room room = membership.getRoom();
+
+        return new JoinedRoomResponse(
+                room.getId(),
+                room.getName(),
+                room.getJoinCode(),
+                room.isPublicRoom(),
+                room.getCategory(),
+                membership.getRole()
         );
  }
 
@@ -54,7 +87,8 @@ public class RoomService {
         return code;
  }
 
- public RoomResponse createRoom(CreateRoomRequest request){
+ @Transactional
+ public JoinedRoomResponse createRoom(CreateRoomRequest request, String username){
         String roomName = request.name() == null || request.name().isBlank()
                 ? "Untitled Room" : request.name().trim();
 
@@ -70,7 +104,23 @@ public class RoomService {
 
         Room savedRoom = roomRepository.save(room);
 
-        return convertToResponse(savedRoom);
+        User user = userRepository.findByUsername(username);
+
+        if (user == null){
+            throw new UsernameNotFoundException("User not found: " + username);
+        }
+
+        RoomMembership membership = new RoomMembership();
+        membership.setUser(user);
+        membership.setRoom(savedRoom);
+        membership.setRole(RoomMembership.RoomRole.OWNER);
+        membership.setJoinedAt(Instant.now());
+
+
+       RoomMembership savedMembership = roomMembershipRepository.save(membership);
+
+
+        return toJoinedRoomResponse(savedMembership);
  }
 
  public RoomResponse findByJoinCode(String joinCode){
@@ -79,8 +129,113 @@ public class RoomService {
                 .orElseThrow(() ->
                         new ResponseStatusException(HttpStatus.NOT_FOUND, "Room not found"));
 
-        return convertToResponse(room);
+        return toRoomResponse(room);
  }
+
+ @Transactional
+public RoomResponse joinRoom(String joinCode, String username){
+        User user = userRepository.findByUsername(username);
+
+        if (user == null){
+            throw new UsernameNotFoundException(
+                    "User not found: " + username
+            );
+        }
+
+        Room room = roomRepository.findByJoinCodeIgnoreCase(joinCode.trim()).orElse(null);
+
+        if (room == null){
+            throw new IllegalArgumentException(
+                    "Room not found for join code: " + joinCode
+            );
+        }
+
+        boolean alreadyJoined = roomMembershipRepository.existsByUserAndRoom(user,room);
+
+        if (!alreadyJoined){
+            RoomMembership membership = new RoomMembership();
+
+           membership.setUser(user);
+           membership.setRoom(room);
+
+           membership.setRole(RoomMembership.RoomRole.MEMBER);
+           membership.setJoinedAt(Instant.now());
+           roomMembershipRepository.save(membership);
+        }
+
+        return toRoomResponse(room);
+ }
+
+
+ @Transactional(readOnly = true)
+    public List<JoinedRoomResponse> getJoinedRooms(String username){
+        User user = userRepository.findByUsername(username);
+
+        if (user == null){
+            throw new UsernameNotFoundException(
+                    "User not found " + username
+            );
+        }
+
+      List<RoomMembership> memberships = roomMembershipRepository.findByUser(user);
+
+        List<JoinedRoomResponse> responses = new ArrayList<>();
+
+        for (RoomMembership membership: memberships){
+            JoinedRoomResponse response = toJoinedRoomResponse(membership);
+            responses.add(response);
+        }
+
+        return responses;
+    }
+
+    @Transactional
+    public void leaveRoom(Long roomId, String username){
+        User user = userRepository.findByUsername(username);
+
+        if (user == null){
+            throw new UsernameNotFoundException("User not found: " + username);
+        }
+
+        Room room = roomRepository.findById(roomId).orElseThrow(() -> new IllegalArgumentException("Room not found"));
+
+        RoomMembership membership = roomMembershipRepository
+                .findByUserAndRoom(user, room)
+                .orElseThrow(() -> new IllegalArgumentException("User is not a member of this room"));
+
+        roomMembershipRepository.delete(membership);
+    }
+
+    @Transactional
+    public void deleteRoom(Long roomId, String username){
+        User user = userRepository.findByUsername(username);
+
+
+        if (user == null){
+            throw new UsernameNotFoundException("User not found: " + username);
+        }
+
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException(
+                                "Room not found " + roomId
+                        )
+                );
+
+        RoomMembership membership = roomMembershipRepository.findByUserAndRoom(user, room).orElseThrow(
+                () -> new AccessDeniedException("You are not a member of this room")
+        );
+
+        if (membership.getRole() != RoomMembership.RoomRole.OWNER){
+            throw new AccessDeniedException("Only the room owner can delete this room");
+        }
+
+        messageRepository.deleteByRoomId(roomId);
+        roomMembershipRepository.deleteByRoom(room);
+        roomRepository.delete(room);
+
+    }
+
 
 
 }

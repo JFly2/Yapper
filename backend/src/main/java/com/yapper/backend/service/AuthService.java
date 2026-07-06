@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
+
 @Service
 public class AuthService {
     private final UserRepository userRepository;
@@ -44,6 +46,8 @@ public class AuthService {
 
         String token = jwtService.generateToken(user.getUsername());
 
+        System.out.println("Generated token at: " + new Date());
+        System.out.println("Generated token: " + token);
         return ResponseEntity.ok(token);
     }
 
