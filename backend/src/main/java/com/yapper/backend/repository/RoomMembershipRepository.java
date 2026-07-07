@@ -11,8 +11,10 @@ import java.util.Optional;
 
 public interface RoomMembershipRepository extends JpaRepository<RoomMembership, Long> {
     boolean existsByUserAndRoom(User user, Room room);
+    boolean existsByUserIdAndRoomId(Long userId, Long roomId);
     Optional <RoomMembership> findByUserAndRoom(User user, Room room);
     List<RoomMembership> findByUser(User user);
     void deleteByRoom(Room room);
+
 
 }

@@ -3,7 +3,6 @@ package com.yapper.backend.controller;
 import com.yapper.backend.model.Message;
 import com.yapper.backend.service.MessageService;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
@@ -22,10 +21,7 @@ public class WebSocketController {
     @MessageMapping("/yapper.send")
     public void sendMessage(Message message, Principal principal){
 
-
-        message.setSender(principal.getName());
-
-        Message savedMessage = messageService.saveMessage(message);
+        Message savedMessage = messageService.saveMessageForUser(message, principal.getName());
 
         messagingTemplate.convertAndSend(
               "/topic/room/" + savedMessage.getRoomId(), savedMessage

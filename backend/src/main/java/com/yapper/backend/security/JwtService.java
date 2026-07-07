@@ -29,10 +29,6 @@ public class JwtService {
     public String generateToken(String username) {
         long now = System.currentTimeMillis();
 
-        System.out.println(
-                "Generating new JWT for " + username + " at " + new Date(now)
-        );
-
         return Jwts.builder()
                 .subject(username)
                 .issuedAt(new Date(now))
