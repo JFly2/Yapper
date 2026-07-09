@@ -2,11 +2,10 @@ package com.yapper.backend.controller;
 
 import com.yapper.backend.dto.CreateRoomRequest;
 import com.yapper.backend.dto.JoinedRoomResponse;
+import com.yapper.backend.dto.RoomMemberResponse;
 import com.yapper.backend.dto.RoomResponse;
 import com.yapper.backend.service.RoomService;
-import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -68,7 +67,14 @@ public class RoomController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/{roomId}/members")
+    public ResponseEntity<List<RoomMemberResponse>> getRoomMembers(@PathVariable Long roomId, Authentication authentication){
+        return ResponseEntity.ok(roomService.getRoomMembers(roomId, authentication.getName()));
+    }
 
-
-
+    @DeleteMapping("/{roomId}/members/{userId}")
+    public ResponseEntity<Void> kickMember(@PathVariable Long roomId, @PathVariable Long userId, Authentication authentication){
+        roomService.kickMember(roomId, userId, authentication.getName());
+        return ResponseEntity.noContent().build();
+    }
 }

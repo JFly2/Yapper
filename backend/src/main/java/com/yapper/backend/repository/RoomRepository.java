@@ -11,5 +11,4 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 
     Optional<Room> findByJoinCodeIgnoreCase(String joinCode);
     boolean existsByJoinCode(String joinCode);
-
 }
