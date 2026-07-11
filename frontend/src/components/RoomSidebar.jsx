@@ -15,8 +15,8 @@ export function RoomSidebar({roomInput, setRoomInput, joinRoom, joinRoomByCode, 
     }
 
     function handleLogOut(){
-        localStorage.removeItem("jwt_token");
-        localStorage.removeItem("username");
+        sessionStorage.removeItem("jwt_token");
+        sessionStorage.removeItem("username");
         navigate("/login")
     }
 

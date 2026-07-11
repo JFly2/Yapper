@@ -5,7 +5,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-    const token = localStorage.getItem("jwt_token");
+    const token = sessionStorage.getItem("jwt_token");
 
     const isAuthRoute = config.url?.startsWith("/auth/");
 
@@ -21,7 +21,7 @@ api.interceptors.response.use(
 
     (error) => {
         if (error.response?.status === 401){
-            localStorage.removeItem("jwt_token");
+            sessionStorage.removeItem("jwt_token");
             window.location.href = "/login";
         }
 

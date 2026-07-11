@@ -1,6 +1,6 @@
 import {useState} from "react";
 import {useNavigate} from "react-router-dom";
-import "../styles/LoginPage.css"
+import "../styles/Auth.css"
 import {Link} from "react-router-dom";
 import api from "../services/api.js";
 
@@ -31,8 +31,8 @@ export function LoginPage(){
 
            const token = response.data;
 
-           localStorage.setItem("jwt_token", token);
-           localStorage.setItem("username", username);
+           sessionStorage.setItem("jwt_token", token);
+           sessionStorage.setItem("username", username);
 
            navigate("/chat");
 
@@ -54,39 +54,59 @@ export function LoginPage(){
     }
 
     return (
-        <div className={"auth-page"}>
-            <div className={"login-container"}>
-               <h1>Login</h1>
-               <p className={"error-message"}>
-                   {error}
-               </p>
-                <form onSubmit={handleLogin}>
+        <div className="auth-page">
 
-                    <input
-                        className={"login-input"}
-                        placeholder={"username"}
-                        type={"text"}
-                        size="30"
-                        value={username}
-                        onChange={(event) => setUsername(event.target.value)}
-                    />
-                    <input
-                        className={"login-input"}
-                        placeholder={"password"}
-                        type={"password"}
-                        size="30"
-                        value={password}
-                        onChange={(event) => setPassword(event.target.value)}
-                    />
+            <div className="auth-card">
+                <div className="auth-brand">
+                    <span className="auth-logo">🗣️</span>
+                    <h1 className="auth-app-name">Yapper</h1>
+                </div>
 
-                    <button className={"login-button"} type={"submit"}>Login</button>
+                <h2 className="auth-title">Welcome back</h2>
+                <p className="auth-subtitle">Log in to continue yapping!</p>
+
+                <form className="auth-form" onSubmit={handleLogin}>
+                    <div className="auth-field">
+                        <label className="auth-label" htmlFor="username">
+                            Username
+                        </label>
+                        <input
+                            id="username"
+                            className="auth-input"
+                            placeholder="Enter your username"
+                            type="text"
+                            value={username}
+                            onChange={(event) => setUsername(event.target.value)}
+                        />
+                    </div>
+
+                    <div className="auth-field">
+                        <label className="auth-label" htmlFor="password">
+                            Password
+                        </label>
+                        <input
+                            id="password"
+                            className="auth-input"
+                            placeholder="Enter your password"
+                            type="password"
+                            value={password}
+                            onChange={(event) => setPassword(event.target.value)}
+                        />
+                    </div>
+
+                    {error && <p className="auth-error">{error}</p>}
+
+                    <button className="auth-button" type="submit">
+                        Login
+                    </button>
                 </form>
 
-                <Link to={"/"} className={"register-link"}>
-                    Don't have an account?
-                </Link>
-            </div>
+                <div className="auth-divider">or</div>
 
+                <p className="auth-switch-text">
+                    Don't have an account? <Link to="/register" className="auth-link">Register</Link>
+                </p>
+            </div>
         </div>
     );
 }

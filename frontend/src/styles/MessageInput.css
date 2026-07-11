@@ -1,5 +1,5 @@
 .send-button {
-    background-color:rgb(0 128 0 / 0.56);
+    background: linear-gradient(135deg, #5b69f6, #2f3ced);
     border: white;
     border-radius: 36px;
     height: 45px;
@@ -17,7 +17,7 @@
 }
 
 .send-button:active {
-    background-color: rgb(0 128 0 / 0.45);
+    background: linear-gradient(135deg, #5b69f6, #2f3ced);
 }
 
 .message-input {

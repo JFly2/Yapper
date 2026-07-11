@@ -34,7 +34,7 @@
 .join-button{
     height: 30px;
     color: white;
-    background-color:rgb(0 128 0 / 0.56);
+    background: linear-gradient(135deg, #5b69f6, #2f3ced);
     font-weight: bold;
     border: none;
     border-radius: 8px;
@@ -77,7 +77,7 @@
     border: none;
     height: 30px;
     border-radius: 8px;
-    background-color: red;
+    background: linear-gradient(135deg, #f65b5b, #ed2f2f);
     cursor: pointer;
 }
 
@@ -90,7 +90,7 @@
     height: 30px;
     font-weight: bold;
     color: white;
-    background-color:rgb(0 128 0 / 0.56);
+    background: linear-gradient(135deg, #5b69f6, #2f3ced);
     border: none;
     border-radius: 8px;
     cursor: pointer;

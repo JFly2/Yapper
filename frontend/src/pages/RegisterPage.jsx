@@ -1,99 +1,114 @@
-import {useState} from "react";
-import {useNavigate} from "react-router-dom";
-import "../styles/RegisterPage.css"
-import {Link} from "react-router";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import "../styles/Auth.css";
 import api from "../services/api.js";
 
-export function RegisterPage(){
+export function RegisterPage() {
     const [email, setEmail] = useState("");
     const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("")
+    const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const navigate = useNavigate();
 
-    async function handleRegister(event){
+    async function handleRegister(event) {
+        event.preventDefault();
+        setError("");
 
-       event.preventDefault();
-       setError("");
-
-        if (!email.includes("@")){
+        if (!email.includes("@")) {
             setError("Invalid email");
             return;
         }
 
         const registerData = {
-           email,
-           username,
-           password
-       };
+            email,
+            username,
+            password
+        };
 
-       try {
-           const response = await api.post(
-               "/auth/register",
-               registerData
-           );
+        try {
+            await api.post(
+                "/auth/register",
+                registerData
+            );
 
-           console.log(response.data);
-           console.log("User created");
+            navigate("/login");
+        } catch (error) {
+            if (error.response?.status === 409) {
+                setError(error.response.data);
+                return;
+            }
 
-           navigate("/login");
-
-       } catch (error){
-
-           if (error.response?.status === 409) {
-               setError(error.response.data);
-               return;
-           }
-
-           setError("Could not register user.");
-       }
-
+            setError("Could not register user.");
+        }
     }
 
-
     return (
-        <div className={"auth-page"}>
-            <div className={"register-container"}>
+        <div className="auth-page">
+            <div className="auth-card">
+                <div className="auth-brand">
+                    <span className="auth-logo">🗣️</span>
+                    <h1 className="auth-app-name">Yapper</h1>
+                </div>
 
-                <h1>Register</h1>
-                {error && <p style = {{color:'red'}}>{error}</p>}
+                <h2 className="auth-title">Create your account</h2>
+                <p className="auth-subtitle">Sign-up to start yapping!</p>
 
-                   <form onSubmit={handleRegister}>
-                    <input
-                        className={"register-input"}
-                        type={"email"}
-                        placeholder={"email"}
-                        size="30"
-                        value={email}
-                        onChange={(event) => setEmail(event.target.value)}
-                    />
-                    <input
-                    className={"register-input"}
-                    type={"text"}
-                    placeholder={"username"}
-                    size="30"
-                    value={username}
-                    onChange={(event) => setUsername(event.target.value)}
-                    />
+                <form className="auth-form" onSubmit={handleRegister}>
+                    <div className="auth-field">
+                        <label className="auth-label" htmlFor="email">
+                            Email
+                        </label>
+                        <input
+                            id="email"
+                            className="auth-input"
+                            type="email"
+                            placeholder="Enter your email"
+                            value={email}
+                            onChange={(event) => setEmail(event.target.value)}
+                        />
+                    </div>
 
-                    <input
-                    className={"register-input"}
-                    type={"password"}
-                    placeholder={"password"}
-                    size="30"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value
-                    )}
-                    />
+                    <div className="auth-field">
+                        <label className="auth-label" htmlFor="username">
+                            Username
+                        </label>
+                        <input
+                            id="username"
+                            className="auth-input"
+                            type="text"
+                            placeholder="Choose a username"
+                            value={username}
+                            onChange={(event) => setUsername(event.target.value)}
+                        />
+                    </div>
 
-                <button className={"register-button"} type={"submit"}>Register</button>
+                    <div className="auth-field">
+                        <label className="auth-label" htmlFor="password">
+                            Password
+                        </label>
+                        <input
+                            id="password"
+                            className="auth-input"
+                            type="password"
+                            placeholder="Choose a password"
+                            value={password}
+                            onChange={(event) => setPassword(event.target.value)}
+                        />
+                    </div>
+
+                    {error && <p className="auth-error">{error}</p>}
+
+                    <button className="auth-button" type="submit">
+                        Register
+                    </button>
                 </form>
 
-                <Link to={"/login"} className={"login-link"}>
-                    Already have an account?
-                </Link>
-            </div>
+                <div className="auth-divider">or</div>
 
+                <p className="auth-switch-text">
+                    Already have an account? <Link to="/login" className="auth-link">Log in</Link>
+                </p>
+            </div>
         </div>
     );
 }

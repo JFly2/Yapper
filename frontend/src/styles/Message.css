@@ -20,7 +20,7 @@
 }
 
 .own-message .message-bubble {
-    background-color: #246b2a;
+    background: linear-gradient(135deg, #5b69f6, #2f3ced);
     color: white;
 }
 
