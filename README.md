@@ -1,8 +1,8 @@
 # Yapper
 
-Yapper is a full-stack real-time chat application built with Spring Boot and React. It supports JWT authentication, authenticated WebSocket communication, room-based messaging, persistent message history, and PostgreSQL storage.
+Yapper is a full-stack real-time chat application built with Spring Boot, React, PostgreSQL, JWT authentication, and STOMP/WebSockets.
 
-Users can register, log in, join rooms using generated join codes, switch between rooms, and exchange messages in real time.
+Users can register, log in, create rooms, join rooms by code, send real-time messages, and manage room membership based on their role. Room owners can view members, kick members, and delete rooms, while regular members can leave rooms and participate in chats they belong to.
 
 ## Features
 
@@ -13,14 +13,17 @@ Users can register, log in, join rooms using generated join codes, switch betwee
 * JWT generation and validation
 * Protected REST endpoints
 * Authenticated STOMP WebSocket connections
+* Protected frontend chat route
 * Logout functionality
+* Per-tab auth sessions using `sessionStorage`
 
 ### Messaging
 
 * Real-time messaging with STOMP and SockJS
 * Room-based WebSocket subscriptions
 * PostgreSQL message persistence
-* Message history loading
+* Protected message history loading
+* Protected WebSocket message sending
 * Backend-controlled sender identity
 * Message timestamps
 * Message date dividers
@@ -31,15 +34,21 @@ Users can register, log in, join rooms using generated join codes, switch betwee
 * PostgreSQL-backed room records
 * Generated six-character join codes
 * Join rooms by code
+* Create rooms through the frontend
 * Internal numeric room IDs
 * User-facing room names
 * Public or private room setting
 * Optional room categories
 * Room switching
+* Persistent user-room memberships
 * Joined-room sidebar
 * Collapsible sidebar
-
-Joined rooms are currently stored in frontend state and reset when the page is refreshed. Persistent user-room membership is in development.
+* Room details sidebar
+* Room member list
+* Owner/member roles
+* Owner-only room deletion
+* Owner-only member kicking
+* Member room leaving
 
 ## Tech Stack
 
@@ -136,10 +145,11 @@ Example request:
 }
 ```
 
-The frontend stores the JWT in local storage:
+The frontend stores the JWT and username in `sessionStorage`:
 
 ```javascript
-localStorage.setItem("jwt_token", token);
+sessionStorage.setItem("jwt_token", token);
+sessionStorage.setItem("username", username);
 ```
 
 The token is included in authenticated REST requests:
@@ -148,6 +158,8 @@ The token is included in authenticated REST requests:
 Authorization: Bearer <token>
 ```
 
+Using `sessionStorage` allows different browser tabs to be logged in as different users during development, which makes testing owner/member behavior easier.
+
 ## Room Flow
 
 Rooms use two identifiers:
@@ -155,7 +167,7 @@ Rooms use two identifiers:
 * `id`: internal numeric database ID
 * `joinCode`: user-facing code used to find and join a room
 
-Example room response:
+Example joined-room response:
 
 ```json
 {
@@ -163,18 +175,39 @@ Example room response:
   "name": "Weekend Group",
   "joinCode": "NF5V9H",
   "publicRoom": false,
-  "category": null
+  "category": "",
+  "role": "OWNER"
 }
 ```
 
-The room-joining flow is:
+### Creating a Room
+
+The room creation flow is:
+
+```text
+User creates a room
+        ↓
+Frontend sends POST /api/rooms
+        ↓
+Backend creates the room
+        ↓
+Backend creates an OWNER membership
+        ↓
+Frontend adds and selects the room
+        ↓
+Room join code can be copied and shared
+```
+
+### Joining a Room
+
+The room joining flow is:
 
 ```text
 User enters a join code
         ↓
-Frontend requests the room by code
+Frontend sends POST /api/rooms/code/{joinCode}
         ↓
-Backend returns the room
+Backend creates a MEMBER membership
         ↓
 Frontend adds and selects the room
         ↓
@@ -184,6 +217,31 @@ Frontend subscribes to the room's WebSocket topic
 ```
 
 The room name and join code are displayed to the user. The numeric room ID is used internally for database operations, message history, and WebSocket subscriptions.
+
+## Room Roles
+
+Yapper uses room memberships to determine what each user can do inside a room.
+
+### OWNER
+
+Owners can:
+
+* Send and receive messages
+* View room members
+* Kick members
+* Delete the room
+
+### MEMBER
+
+Members can:
+
+* Send and receive messages
+* View room members
+* Leave the room
+
+Members cannot kick other users or delete rooms.
+
+The frontend displays role-based controls, but the backend still enforces all room permissions.
 
 ## WebSocket Flow
 
@@ -236,6 +294,8 @@ Example outgoing message payload:
 
 The frontend does not provide the sender name. The backend determines the sender from the authenticated WebSocket principal.
 
+Before saving and broadcasting a message, the backend checks that the authenticated user belongs to the room.
+
 ## REST API
 
 ### Authentication
@@ -264,7 +324,7 @@ Authenticates a user and returns a JWT.
 GET /api/messages/{roomId}
 ```
 
-Returns the stored messages for a room.
+Returns stored messages for a room only if the authenticated user is a member of that room.
 
 #### Save a message through REST
 
@@ -272,7 +332,7 @@ Returns the stored messages for a room.
 POST /api/messages
 ```
 
-Saves a message through the REST API. Messages are normally sent through WebSocket.
+Saves a message through the REST API only if the authenticated user is a member of that room. Messages are normally sent through WebSocket.
 
 #### Verify authentication
 
@@ -300,7 +360,15 @@ Example request:
 }
 ```
 
-The backend creates the room and generates a unique six-character join code.
+The backend creates the room, generates a unique six-character join code, and creates an OWNER membership for the authenticated user.
+
+#### Get joined rooms
+
+```http
+GET /api/rooms/joined
+```
+
+Returns the authenticated user's joined rooms, including their role in each room.
 
 #### Find a room by join code
 
@@ -313,6 +381,46 @@ Example:
 ```http
 GET /api/rooms/code/NF5V9H
 ```
+
+#### Join a room by code
+
+```http
+POST /api/rooms/code/{joinCode}
+```
+
+Creates a MEMBER membership for the authenticated user.
+
+#### Delete a room
+
+```http
+DELETE /api/rooms/{roomId}
+```
+
+Deletes a room. Only the OWNER can delete a room.
+
+#### Leave a room
+
+```http
+DELETE /api/rooms/{roomId}/leave
+```
+
+Allows a MEMBER to leave a room. Owners cannot leave their own room through this endpoint.
+
+#### Get room members
+
+```http
+GET /api/rooms/{roomId}/members
+```
+
+Returns the members of a room.
+
+#### Kick a member
+
+```http
+DELETE /api/rooms/{roomId}/members/{userId}
+```
+
+Allows the OWNER to kick a MEMBER from the room.
 
 ## Local Development
 
@@ -430,7 +538,7 @@ http://localhost:5173
 
 Open that address in a browser.
 
-The backend must be running for authentication, room lookup, message history, and WebSocket messaging to work.
+The backend must be running for authentication, room management, message history, and WebSocket messaging to work.
 
 ## Starting the Project After Initial Setup
 
@@ -454,62 +562,80 @@ Then open:
 http://localhost:5173
 ```
 
-## Development Status
-
-The core authentication, room lookup, message persistence, and real-time messaging flows are functional.
-
-Currently in development:
-
-* Frontend room-creation form
-* Persistent user-room memberships
-* Loading joined rooms after login or refresh
-* Room ownership
-* Room management controls
-* Public room discovery
-* Category filtering
-* User-facing invalid join-code errors
-* Improved WebSocket reconnect handling
-* Production deployment configuration
-
-## Current Limitations
-
-* Joined rooms are stored only in React state.
-* Joined rooms disappear after a browser refresh.
-* Rooms cannot yet be created through the frontend.
-* Public room discovery is not yet implemented.
-* Room ownership and deletion permissions are not yet implemented.
-* Invalid join-code errors are logged to the browser console instead of being displayed in the interface.
-
-## Roadmap
-
-* Persistent user-room membership table
-* Leave-room functionality
-* Room ownership and permissions
-* Rename-room functionality
-* Delete-room functionality for room owners
-* Public room search
-* Room category browsing
-* Refresh tokens
-* Email verification
-* Password reset
-* Private messages
-* Friend system
-* Typing indicators
-* Read receipts
-* Online presence
-* Improved reconnect handling
-* Production database configuration
-* Backend and frontend deployment
-
 ## Security
 
 * Passwords are hashed with BCrypt.
 * JWTs are required for protected REST endpoints.
 * JWTs are validated when establishing STOMP connections.
 * Message sender identity is determined by the authenticated backend principal.
+* Users can only access messages for rooms they belong to.
+* Users can only send messages to rooms they belong to.
+* Only owners can delete rooms.
+* Only owners can kick members.
 * Database credentials and JWT secrets should not be committed to Git.
 * Local request files containing active JWTs should not be committed.
 
-## Project Status
+## Current Status
 
-Yapper is under active development. Its core authentication, room lookup, message persistence, and real-time chat functionality are working. The next major development step is persistent room membership so users retain their joined rooms across sessions.
+Yapper currently supports the full room-based chat flow:
+
+```text
+Register
+Login
+Create room
+Join room by code
+Send real-time messages
+View joined rooms
+Switch rooms
+Open room details
+View room members
+Kick members as owner
+Leave room as member
+Delete room as owner
+Logout
+```
+
+The following core functionality is working:
+
+* User registration and login
+* JWT authentication
+* Protected REST endpoints
+* Authenticated WebSocket connections
+* Room creation
+* Room joining
+* Persistent user-room memberships
+* Joined-room loading after refresh
+* Owner/member roles
+* Role-aware frontend controls
+* Room details sidebar
+* Room member list
+* Owner member kicking
+* Owner room deletion
+* Member room leaving
+* Protected message history
+* Protected WebSocket message sending
+* PostgreSQL persistence
+
+## Future Development
+
+Possible future improvements:
+
+* Friends system
+* Friend requests
+* Direct messages
+* Friend-based room invitations
+* Online/offline presence
+* Room moderators
+* Room renaming
+* Message editing and deletion
+* Typing indicators
+* Read receipts
+* User profiles
+* Public room discovery
+* Room category browsing
+* Refresh tokens
+* Email verification
+* Password reset
+* Improved WebSocket reconnect handling
+* Production database configuration
+* Backend and frontend deployment
