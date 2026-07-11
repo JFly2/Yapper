@@ -1,6 +1,6 @@
 # Yapper Backend
 
-The Yapper backend is a Spring Boot application that provides authentication, room management, persistent message storage, and real-time messaging through authenticated STOMP WebSocket connections.
+The Yapper backend is a Spring Boot application that provides authentication, room management, persistent message storage, room membership permissions, and real-time messaging through authenticated STOMP WebSocket connections.
 
 ## Tech Stack
 
@@ -29,8 +29,15 @@ The backend is responsible for:
 * Authenticating STOMP WebSocket connections
 * Creating and locating chat rooms
 * Generating room join codes
+* Creating room memberships
+* Assigning room owner/member roles
+* Loading a user's joined rooms
+* Enforcing room permissions
+* Allowing owners to delete rooms
+* Allowing owners to kick members
+* Allowing members to leave rooms
 * Saving messages to PostgreSQL
-* Loading message history
+* Loading protected message history
 * Determining message sender identity from the authenticated principal
 * Broadcasting messages to room-specific WebSocket topics
 
@@ -42,6 +49,12 @@ backend/
 │   ├── main/
 │   │   ├── java/
 │   │   │   └── com/yapper/backend/
+│   │   │       ├── controller/
+│   │   │       ├── dto/
+│   │   │       ├── model/
+│   │   │       ├── repository/
+│   │   │       ├── security/
+│   │   │       └── service/
 │   │   └── resources/
 │   │       └── application.properties
 │   └── test/
@@ -129,7 +142,7 @@ Clients send messages to:
 /app/yapper.send
 ```
 
-Clients subscribe to:
+Clients subscribe to room messages at:
 
 ```text
 /topic/room/{roomId}
@@ -145,6 +158,8 @@ Example message payload:
 ```
 
 The client does not provide the sender name. The backend determines the sender from the authenticated WebSocket principal.
+
+Before saving and broadcasting a WebSocket message, the backend checks that the authenticated user belongs to the room they are sending a message to.
 
 ## REST Endpoints
 
@@ -168,13 +183,13 @@ Authenticates a user and returns a JWT.
 GET /api/messages/{roomId}
 ```
 
-Returns stored message history for a room.
+Returns stored message history for a room only if the authenticated user is a member of that room.
 
 ```http
 POST /api/messages
 ```
 
-Saves a message through REST.
+Saves a message through REST only if the authenticated user is a member of that room.
 
 ```http
 GET /api/messages/test
@@ -188,7 +203,7 @@ Returns the authenticated username and can be used to test JWT authentication.
 POST /api/rooms
 ```
 
-Creates a room and generates a unique six-character join code.
+Creates a room, generates a unique six-character join code, and creates an OWNER membership for the authenticated user.
 
 Example request:
 
@@ -201,10 +216,93 @@ Example request:
 ```
 
 ```http
+GET /api/rooms/joined
+```
+
+Returns the authenticated user's joined rooms, including their role in each room.
+
+```http
 GET /api/rooms/code/{joinCode}
 ```
 
 Finds a room using its join code.
+
+```http
+POST /api/rooms/code/{joinCode}
+```
+
+Joins the authenticated user to a room as a MEMBER.
+
+```http
+DELETE /api/rooms/{roomId}
+```
+
+Deletes a room. Only the OWNER can delete a room.
+
+```http
+DELETE /api/rooms/{roomId}/leave
+```
+
+Allows a MEMBER to leave a room. Owners cannot leave their own room through this route.
+
+```http
+GET /api/rooms/{roomId}/members
+```
+
+Returns the members of a room.
+
+```http
+DELETE /api/rooms/{roomId}/members/{userId}
+```
+
+Allows the OWNER to kick a MEMBER from the room.
+
+## Room Memberships and Roles
+
+Yapper uses a room membership table to track which users belong to which rooms.
+
+Each membership has a role:
+
+```text
+OWNER
+MEMBER
+```
+
+### OWNER
+
+Owners can:
+
+* Open the room
+* Send and receive messages
+* View room members
+* Kick members
+* Delete the room
+
+### MEMBER
+
+Members can:
+
+* Open the room
+* Send and receive messages
+* View room members
+* Leave the room
+
+Members cannot delete rooms or kick other users.
+
+## Security and Permission Checks
+
+The backend enforces permissions even if the frontend hides unauthorized actions.
+
+The backend checks that:
+
+* Users must be authenticated before accessing protected routes
+* Users can only fetch messages for rooms they belong to
+* Users can only send REST messages to rooms they belong to
+* Users can only send WebSocket messages to rooms they belong to
+* Only owners can delete rooms
+* Only owners can kick members
+* Owners cannot be kicked through the member-kick endpoint
+* Owners cannot leave their own room through the member leave endpoint
 
 ## Database Configuration
 
@@ -286,21 +384,35 @@ The following backend functionality is working:
 * Authenticated STOMP connections
 * Room creation
 * Room lookup by join code
-* Generated room join codes
-* Room-based message broadcasting
-* Message persistence
-* Message history retrieval
-* Backend-controlled sender identity
-* Message timestamps
-
-## In Development
-
+* Joining rooms by code
 * Persistent user-room memberships
 * Loading a user's joined rooms
 * Room ownership
-* Room permissions
-* Room management endpoints
-* Public room discovery
-* Category filtering
+* Owner and member roles
+* Owner-only room deletion
+* Member room leaving
+* Owner-only member kicking
+* Room member listing
+* Room-based message broadcasting
+* Message persistence
+* Protected message history retrieval
+* Protected WebSocket message sending
+* Backend-controlled sender identity
+* Message timestamps
+
+## Future Development
+
+Possible future backend features:
+
+* Friends system
+* Friend requests
+* Direct messages
+* Friend-based room invitations
+* Online/offline presence
+* Room moderators
+* Room renaming
+* Message editing and deletion
+* Typing indicators
+* Read receipts
 * Refresh tokens
 * Production deployment configuration
