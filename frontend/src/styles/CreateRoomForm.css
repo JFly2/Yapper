@@ -1,4 +1,7 @@
-.create-room-section {}
+.create-room-section {
+    display: flex;
+    gap: 12px;
+}
 
 .room-name-input {
     background-color: transparent;
@@ -7,14 +10,17 @@
     border-width: 0.1px;
     color: #b5bac1;
     padding: 8px 0 6px;
+    margin-right: 10px;
 }
 
-.room-category-input { background-color: transparent;
+.room-category-input {
+    background-color: transparent;
     border-color: transparent;
     border-bottom-color: #4a4d53;
     border-width: 0.1px;
     color: #b5bac1;
     padding: 0 0 6px;
+    margin-right: 10px;
 
 }
 
@@ -34,7 +40,7 @@
     font-weight: bold;
     font-size: 11px;
     color: white;
-    background-color:rgb(0 128 0 / 0.56);
+    background: linear-gradient(135deg, #5b69f6, #2f3ced);
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -44,7 +50,7 @@
     font-weight: bold;
     font-size: 12px;
     color: white;
-    background-color:rgb(0 128 0 / 0.56);
+    background: linear-gradient(135deg, #5b69f6, #2f3ced);
     border: none;
     border-radius: 10px;
     padding: 5px 5px 5px;
