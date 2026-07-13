@@ -1,6 +1,7 @@
 .create-room-section {
     display: flex;
     gap: 12px;
+    flex-direction: column;
 }
 
 .room-name-input {
