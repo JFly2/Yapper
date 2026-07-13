@@ -4,6 +4,22 @@ Yapper is a full-stack real-time chat application built with Spring Boot, React,
 
 Users can register, log in, create rooms, join rooms by code, send real-time messages, and manage room membership based on their role. Room owners can view members, kick members, and delete rooms, while regular members can leave rooms and participate in chats they belong to.
 
+## Screenshots
+
+### Authentication
+
+| Login | Register |
+|-------|----------|
+| ![Yapper login page](screenshots/Yapper-login.jpg) | ![Yapper register page](screenshots/Yapper-register.jpg) |
+
+### Chat Dashboard
+
+![Yapper dashboard](screenshots/Yapper-dashboard.jpg)
+
+### Room Creation
+
+![Yapper create room modal](screenshots/Yapper-modal.jpg)
+
 ## Features
 
 ### Authentication
