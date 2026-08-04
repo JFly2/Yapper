@@ -17,8 +17,8 @@ import java.util.List;
 
 @Configuration
 public class SecurityConfig {
-    
-    private JwtAuthFilter jwtFilter;
+
+    private final JwtAuthFilter jwtFilter;
     private final String frontendUrl;
 
     public SecurityConfig(JwtAuthFilter jwtFilter, @Value("${frontend.url}") String frontendUrl){
