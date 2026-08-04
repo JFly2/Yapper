@@ -7,6 +7,7 @@ import io.jsonwebtoken.Jwts;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
@@ -16,12 +17,16 @@ import javax.crypto.SecretKey;
 @Service
 public class JwtService {
 
-    //move into application properties
-    private final String SECRET_KEY = "supersecretkeysupersecretkeysupersecretkey";
+    private final String secretKey;
+
+   public JwtService(
+           @Value("${jwt.secret}")String secretKey) {
+       this.secretKey = secretKey;
+   }
 
 
     private SecretKey getSigningKey(){
-        byte[] keyBytes = SECRET_KEY.getBytes(StandardCharsets.UTF_8);
+        byte[] keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
