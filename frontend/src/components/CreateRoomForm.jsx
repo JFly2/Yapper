@@ -2,6 +2,7 @@ import {useState} from "react";
 import "../styles/CreateRoomForm.css"
 
 export function CreateRoomForm({ createRoom }){
+
     const [name, setName] = useState("");
     const [category, setCategory] = useState("");
     const [publicRoom, setPublicRoom] = useState(false);
