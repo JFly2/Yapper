@@ -33,7 +33,7 @@ function ChatBox() {
 
     useEffect(() => {
         const token = sessionStorage.getItem("jwt_token");
-        const socket = new SockJS("http://localhost:8080/ws");
+        const socket = new SockJS(`${import.meta.env.VITE_WS_BASE_URL}/ws`);
         const stompClient = Stomp.over(socket);
         stompClient.debug = () => {};
 
