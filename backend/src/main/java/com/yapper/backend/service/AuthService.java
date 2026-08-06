@@ -21,7 +21,6 @@ public class AuthService {
         this.jwtService = jwtService;
     }
 
-    //change to DTO
     public ResponseEntity<?> login(LoginRequest request) {
 
         User user = userRepository.findByUsername(request.username());
