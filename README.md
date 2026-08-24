@@ -1,6 +1,6 @@
 # Yapper
 
-Yapper is a full-stack real-time chat application built with Spring Boot, React, PostgreSQL, JWT authentication, and STOMP/WebSockets.
+A full-stack real-time chat application built with Spring Boot, React, PostgreSQL, JWT authentication, and STOMP/WebSockets.
 
 Users can register, log in, create rooms, join rooms by code, send real-time messages, and manage room membership based on their role. Room owners can view members, kick members, and delete rooms, while regular members can leave rooms and participate in chats they belong to.
 
@@ -655,3 +655,6 @@ Possible future improvements:
 * Improved WebSocket reconnect handling
 * Production database configuration
 * Backend and frontend deployment
+
+
+

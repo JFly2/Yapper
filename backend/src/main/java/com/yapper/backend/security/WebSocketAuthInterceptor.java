@@ -28,14 +28,13 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
     }
 
     @Override
-    public Message<?> preSend(
-            Message<?> message,
-            MessageChannel channel
-    ){
+    public Message<?> preSend(Message<?> message, MessageChannel channel){
+
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(
                 message, StompHeaderAccessor.class);
 
         if (StompCommand.CONNECT.equals(accessor.getCommand())){
+
             String authHeader = accessor.getFirstNativeHeader("Authorization");
 
             if (authHeader != null && authHeader.startsWith("Bearer ")){

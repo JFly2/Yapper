@@ -45,6 +45,7 @@ export function RegisterPage() {
     return (
         <div className="auth-page">
             <div className="auth-card">
+
                 <div className="auth-brand">
                     <span className="auth-logo">🗣️</span>
                     <h1 className="auth-app-name">Yapper</h1>
